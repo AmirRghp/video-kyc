@@ -1,0 +1,68 @@
+services:
+  ai:
+    build:
+      context: ./services/ai
+    container_name: video-kyc-ai
+    restart: unless-stopped
+    networks:
+      - ai-internal
+    volumes:
+      - deepface-cache:/root/.deepface
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
+  backend:
+    build:
+      context: ./services/backend
+    container_name: video-kyc-backend
+    restart: unless-stopped
+    environment:
+      AI_SERVICE_URL: http://ai:8001
+      UPLOAD_DIR: /app/uploads
+    depends_on:
+      ai:
+        condition: service_healthy
+    networks:
+      - edge
+      - ai-internal
+    volumes:
+      - uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  frontend:
+    build:
+      context: ./services/frontend
+    container_name: video-kyc-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - edge
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+networks:
+  edge:
+    driver: bridge
+  ai-internal:
+    driver: bridge
+
+volumes:
+  uploads:
+  deepface-cache:

@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video KYC Verification</title>
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-hover: #4338CA;
+            --bg: #0F172A;
+            --surface: #1E293B;
+            --text: #F8FAFC;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 2rem;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background: var(--surface);
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #60A5FA, #A78BFA);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        input[type=file] {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 0.5rem;
+            color: #fff;
+            width: 100%;
+            max-width: 400px;
+            cursor: pointer;
+        }
+
+        input[type=file]::-webkit-file-upload-button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            margin-right: 1rem;
+            transition: background 0.2s;
+        }
+
+        input[type=file]::-webkit-file-upload-button:hover {
+            background: var(--primary-hover);
+        }
+
+        select {
+            padding: 0.625rem 1rem;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 0.5rem;
+            color: #fff;
+            font-size: 0.875rem;
+            width: 100%;
+            max-width: 400px;
+            cursor: pointer;
+            appearance: auto;
+        }
+
+        select option {
+            background: #1E293B;
+            color: #fff;
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.875rem 2.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.4);
+        }
+
+        button:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.5);
+        }
+
+        button:disabled {
+            background: #475569;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        #video-container {
+            position: relative;
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            aspect-ratio: 4/3;
+            background: #000;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        canvas {
+            display: none;
+        }
+
+        /* Challenge overlay on top of the video */
+        .challenge-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.55);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .challenge-overlay.active {
+            display: flex;
+        }
+
+        .challenge-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+            margin-bottom: 0.5rem;
+        }
+
+        .challenge-timer {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #FDE68A;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+        }
+
+        .challenge-counter {
+            font-size: 0.8rem;
+            color: #94A3B8;
+            margin-top: 0.25rem;
+        }
+
+        /* Status badges */
+        .status-badge {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-top: 1.5rem;
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        .status-badge.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .status-badge.info {
+            background: rgba(96, 165, 250, 0.2);
+            color: #93C5FD;
+            border: 1px solid rgba(96, 165, 250, 0.3);
+        }
+
+        .status-badge.success {
+            background: rgba(16, 185, 129, 0.2);
+            color: #6EE7B7;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+        }
+
+        .status-badge.error {
+            background: rgba(239, 68, 68, 0.2);
+            color: #FCA5A5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .status-badge.warn {
+            background: rgba(251, 191, 36, 0.2);
+            color: #FDE68A;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        .status-badge.challenge-active {
+            background: rgba(139, 92, 246, 0.2);
+            color: #C4B5FD;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .loader {
+            display: none;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .device-info {
+            font-size: 0.75rem;
+            color: #64748B;
+            margin-top: -0.5rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>Identity Verification</h1>
+
+        <!-- Step 1: Upload ID + Select Camera -->
+        <div id="step-1" class="step">
+            <p style="color: #94A3B8; margin-bottom: 0.5rem;">Please upload a clear picture of your ID document.</p>
+            <input type="file" id="id-image" accept="image/jpeg, image/png">
+
+            <p style="color: #94A3B8; margin-bottom: -0.5rem; font-size: 0.875rem;">Select Camera Device:</p>
+            <select id="camera-select">
+                <option value="">Loading cameras...</option>
+            </select>
+            <p class="device-info" id="device-count">Detecting available cameras...</p>
+
+            <button id="upload-btn" onclick="uploadId()">
+                <span id="btn-text">Proceed to Liveness Check</span>
+                <div class="loader" id="btn-loader"></div>
+            </button>
+        </div>
+
+        <!-- Step 2: Liveness, Challenges & Matching Stream -->
+        <div id="step-2" class="step" style="display: none;">
+            <p style="color: #94A3B8; margin-bottom: 0.5rem;" id="instruction-text">
+                Position your face inside the frame.
+            </p>
+
+            <div id="video-container">
+                <video id="video" autoplay playsinline></video>
+                <canvas id="canvas"></canvas>
+
+                <!-- Challenge overlay (shown during active challenges) -->
+                <div class="challenge-overlay" id="challenge-overlay">
+                    <div class="challenge-text" id="challenge-label">Smile!</div>
+                    <div class="challenge-counter" id="challenge-counter">Challenge 1/2</div>
+                    <div style="width: 80%; margin-top: 0.75rem;">
+                        <div
+                            style="background: rgba(255,255,255,0.15); border-radius: 999px; height: 12px; overflow: hidden;">
+                            <div id="hold-bar"
+                                style="height: 100%; width: 0%; background: linear-gradient(to right, #60A5FA, #34D399); border-radius: 999px; transition: width 0.15s ease;">
+                            </div>
+                        </div>
+                        <div id="hold-label" style="font-size: 0.8rem; color: #94A3B8; margin-top: 0.35rem;">Hold: 0.0 /
+                            3.0s</div>
+                    </div>
+                </div>
+            </div>
+
+            <button id="stop-btn" onclick="stopStream()" style="display:none; background: #EF4444; margin-top: 1rem;">
+                Cancel Verification
+            </button>
+        </div>
+
+        <div id="status-badge" class="status-badge">Waiting for input...</div>
+    </div>
+
+    <script>
+        let ws;
+        let stream;
+        let intervalId;
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const statusBadge = document.getElementById('status-badge');
+        const instructionText = document.getElementById('instruction-text');
+        const cameraSelect = document.getElementById('camera-select');
+        const deviceCount = document.getElementById('device-count');
+        const challengeOverlay = document.getElementById('challenge-overlay');
+        const challengeLabel = document.getElementById('challenge-label');
+        const challengeCounter = document.getElementById('challenge-counter');
+        const holdBar = document.getElementById('hold-bar');
+        const holdLabel = document.getElementById('hold-label');
+
+        function updateStatus(msg, type = 'info') {
+            statusBadge.textContent = msg;
+            statusBadge.className = `status-badge visible ${type}`;
+        }
+
+        // -------------------------------------------------------
+        // Camera Device Enumeration
+        // -------------------------------------------------------
+        async function enumerateDevices() {
+            try {
+                let tempStream = null;
+                try {
+                    tempStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                } catch (e) {
+                    console.warn("Could not get temp stream for labels:", e);
+                }
+
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(d => d.kind === 'videoinput');
+
+                if (tempStream) { tempStream.getTracks().forEach(t => t.stop()); }
+
+                cameraSelect.innerHTML = '';
+
+                if (videoDevices.length === 0) {
+                    cameraSelect.innerHTML = '<option value="">No cameras detected</option>';
+                    deviceCount.textContent = '0 cameras found.';
+                    updateStatus('No cameras detected.', 'warn');
+                    return;
+                }
+
+                videoDevices.forEach((device, i) => {
+                    const option = document.createElement('option');
+                    option.value = device.deviceId;
+                    option.textContent = device.label || `Camera ${i + 1}`;
+                    cameraSelect.appendChild(option);
+                });
+
+                deviceCount.textContent = `${videoDevices.length} camera(s) found`;
+                updateStatus('Camera(s) detected. Upload ID to begin.', 'info');
+            } catch (err) {
+                console.error("Device enumeration error:", err);
+                cameraSelect.innerHTML = '<option value="">Error detecting cameras</option>';
+                deviceCount.textContent = 'Could not enumerate devices.';
+                updateStatus(`Device error: ${err.message}`, 'error');
+            }
+        }
+
+        enumerateDevices();
+
+        // -------------------------------------------------------
+        // Upload ID
+        // -------------------------------------------------------
+        async function uploadId() {
+            const fileInput = document.getElementById('id-image');
+            if (fileInput.files.length === 0) { updateStatus('Please select an ID image first.', 'error'); return; }
+            const selectedDevice = cameraSelect.value;
+            if (!selectedDevice) { updateStatus('No camera selected.', 'error'); return; }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            updateStatus('Uploading identity document...', 'info');
+            document.getElementById('upload-btn').disabled = true;
+            document.getElementById('btn-text').style.display = 'none';
+            document.getElementById('btn-loader').style.display = 'inline-block';
+
+            try {
+                const response = await fetch('/upload_id', { method: 'POST', body: formData });
+                if (!response.ok) throw new Error("Upload failed.");
+                const data = await response.json();
+                if (data.session_id) {
+                    document.getElementById('step-1').style.display = 'none';
+                    document.getElementById('step-2').style.display = 'flex';
+                    startWebcam(data.session_id, selectedDevice);
+                }
+            } catch (error) {
+                updateStatus('Network Error: Could not upload file.', 'error');
+                resetUploadBtn();
+            }
+        }
+
+        function resetUploadBtn() {
+            document.getElementById('upload-btn').disabled = false;
+            document.getElementById('btn-text').style.display = 'inline-block';
+            document.getElementById('btn-loader').style.display = 'none';
+        }
+
+        // -------------------------------------------------------
+        // Webcam Start
+        // -------------------------------------------------------
+        async function startWebcam(sessionId, deviceId) {
+            try {
+                const constraints = {
+                    video: deviceId ? { deviceId: { exact: deviceId } } : true,
+                    audio: false
+                };
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+                document.getElementById('stop-btn').style.display = 'inline-block';
+
+                video.onloadedmetadata = () => {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    connectWebSocket(sessionId);
+                };
+            } catch (err) {
+                console.error("Camera Error:", err);
+                if (err.name === 'OverconstrainedError') {
+                    try {
+                        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                        video.srcObject = stream;
+                        document.getElementById('stop-btn').style.display = 'inline-block';
+                        video.onloadedmetadata = () => {
+                            canvas.width = video.videoWidth;
+                            canvas.height = video.videoHeight;
+                            connectWebSocket(sessionId);
+                        };
+                    } catch (fe) {
+                        updateStatus(`Camera Error: ${fe.name}`, 'error');
+                    }
+                } else {
+                    updateStatus(`Camera Error: ${err.name} - ${err.message}`, 'error');
+                }
+            }
+        }
+
+        // -------------------------------------------------------
+        // Challenge Overlay Control
+        // -------------------------------------------------------
+        function showChallengeOverlay(label, num, total) {
+            challengeLabel.textContent = label;
+            challengeCounter.textContent = `Challenge ${num}/${total}`;
+            challengeOverlay.classList.add('active');
+            holdBar.style.width = '0%';
+            holdLabel.textContent = 'Hold: 0.0 / 3.0s';
+        }
+
+        function updateHoldProgress(progress) {
+            // progress is 0.0 - 1.0
+            const pct = Math.min(100, Math.round(progress * 100));
+            holdBar.style.width = `${pct}%`;
+            const held = (progress * 3).toFixed(1);
+            holdLabel.textContent = `Hold: ${held} / 3.0s`;
+
+            if (progress >= 1.0) {
+                holdBar.style.background = 'linear-gradient(to right, #34D399, #6EE7B7)';
+            } else if (progress > 0) {
+                holdBar.style.background = 'linear-gradient(to right, #60A5FA, #34D399)';
+            } else {
+                holdBar.style.background = 'linear-gradient(to right, #60A5FA, #34D399)';
+                holdBar.style.width = '0%';
+            }
+        }
+
+        function hideChallengeOverlay() {
+            challengeOverlay.classList.remove('active');
+        }
+
+        // -------------------------------------------------------
+        // Auto-retry: go back to step 1
+        // -------------------------------------------------------
+        function returnToStart(delaySec = 3) {
+            setTimeout(() => {
+                stopStream(false);
+            }, delaySec * 1000);
+        }
+
+        // -------------------------------------------------------
+        // WebSocket Connection
+        // -------------------------------------------------------
+        function connectWebSocket(sessionId) {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(`${protocol}//${window.location.host}/ws/kyc/${sessionId}`);
+
+            ws.onopen = () => {
+                updateStatus('Analyzing Liveness... Please blink 3 times.', 'info');
+                intervalId = setInterval(captureAndSendFrame, 400);
+            };
+
+            ws.onerror = () => {
+                updateStatus('Connection error — retrying may help.', 'error');
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+
+                switch (data.status) {
+                    case 'processing':
+                        instructionText.textContent = data.message;
+                        updateStatus(data.message, 'info');
+                        break;
+
+                    case 'liveness_passed':
+                        instructionText.textContent = "Liveness confirmed! Starting challenges…";
+                        updateStatus(data.message, 'success');
+                        break;
+
+                    case 'challenge':
+                        instructionText.textContent = data.message;
+                        updateStatus(`Challenge ${data.challenge_num}/${data.total_challenges}`, 'challenge-active');
+                        if (data.timeout !== undefined) {
+                            showChallengeOverlay(data.message, data.challenge_num, data.total_challenges);
+                        }
+                        if (data.hold_progress !== undefined) {
+                            updateHoldProgress(data.hold_progress);
+                        }
+                        challengeLabel.textContent = data.message;
+                        break;
+
+                    case 'challenge_passed':
+                        hideChallengeOverlay();
+                        instructionText.textContent = data.message;
+                        updateStatus(data.message, 'success');
+                        break;
+
+                    case 'challenge_timeout':
+                        hideChallengeOverlay();
+                        instructionText.textContent = "Challenge Failed — Time's Up";
+                        updateStatus(data.message, 'error');
+                        returnToStart(3);
+                        break;
+
+                    case 'matching':
+                        hideChallengeOverlay();
+                        if (intervalId) {
+                            clearInterval(intervalId);
+                            intervalId = null;
+                        }
+                        instructionText.textContent = "Matching face against ID…";
+                        updateStatus(data.message, 'info');
+                        break;
+
+                    case 'success':
+                        instructionText.textContent = "Verification Complete ✔️";
+                        updateStatus(`✔️ ${data.message} (Score: ${data.distance.toFixed(3)})`, 'success');
+                        stopStream(true);
+                        break;
+
+                    case 'failed':
+                        instructionText.textContent = "Face Mismatch — Restarting…";
+                        updateStatus(`❌ ${data.message} (Score: ${data.distance.toFixed(3)})`, 'error');
+                        returnToStart(3);
+                        break;
+
+                    case 'error':
+                        updateStatus(`⚠️ ${data.message}`, 'error');
+                        break;
+                }
+            };
+
+            ws.onclose = () => {
+                clearInterval(intervalId);
+                hideChallengeOverlay();
+            };
+        }
+
+        function captureAndSendFrame() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                ws.send(canvas.toDataURL('image/jpeg', 0.7));
+            }
+        }
+
+        function stopStream(keepUI = false) {
+            if (stream) { stream.getTracks().forEach(t => t.stop()); }
+            if (ws) { ws.close(); }
+            if (intervalId) { clearInterval(intervalId); }
+            hideChallengeOverlay();
+
+            if (!keepUI) {
+                document.getElementById('step-2').style.display = 'none';
+                document.getElementById('step-1').style.display = 'flex';
+                resetUploadBtn();
+                document.getElementById('id-image').value = '';
+                updateStatus('Ready to try again.', 'info');
+            } else {
+                document.getElementById('stop-btn').style.display = 'none';
+            }
+        }
+    </script>
+</body>
+
+</html>

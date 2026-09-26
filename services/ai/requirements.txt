@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+deepface
+mediapipe
+opencv-python-headless
+python-multipart
+tf-keras
+httpx

@@ -1,0 +1,33 @@
+# Virtual environments
+venv/
+.venv/
+**/.venv/
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+
+# Uploaded ID images (temporary, session-scoped)
+uploads/
+services/backend/uploads/
+
+# MediaPipe model weights (downloaded separately / baked in Docker)
+*.task
+
+# DeepFace cache
+.deepface/
+
+# Environment files
+.env
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Local agent workspace
+.freebuff/
